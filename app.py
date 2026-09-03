@@ -16,7 +16,12 @@ from modules.hl7 import (
     parse_hl7_message,
     get_hl7_segments
 )
-
+from modules.fhir import (
+    create_patient_resource,
+    create_encounter_resource,
+    create_observation_resource,
+    create_fhir_bundle
+)
 
 st.set_page_config(
     page_title="INTEROP-LAB",
@@ -87,6 +92,15 @@ disease_classification = map_disease_classification(
 hl7_message = generate_hl7_message(ehr_record)
 hl7_segments = get_hl7_segments(hl7_message)
 parsed_hl7 = parse_hl7_message(hl7_message)
+
+# -----------------------------
+# M6: FHIR
+# -----------------------------
+
+fhir_patient = create_patient_resource(ehr_record)
+fhir_encounter = create_encounter_resource(ehr_record)
+fhir_observations = create_observation_resource(ehr_record)
+fhir_bundle = create_fhir_bundle(ehr_record)
 
 # -----------------------------
 # Patient Summary
@@ -391,3 +405,81 @@ st.markdown("""
 - **PID** → Patient Identification
 - **PV1** → Patient Visit / Encounter information
 """)
+
+st.markdown("---")
+
+st.header("🚀 M6: FHIR")
+
+st.write(
+    "FHIR represents healthcare information as modular resources "
+    "that can be exchanged between healthcare systems."
+)
+
+
+# -----------------------------
+# Resource Overview
+# -----------------------------
+
+st.markdown("### FHIR Resources")
+
+resources = [
+    fhir_patient,
+    fhir_encounter,
+    *fhir_observations
+]
+
+cols = st.columns(len(resources))
+
+for col, resource in zip(cols, resources):
+
+    with col:
+        st.metric(
+            "Resource",
+            resource["resourceType"]
+        )
+
+
+# -----------------------------
+# Patient Resource
+# -----------------------------
+
+st.markdown("### 👤 Patient Resource")
+
+st.json(fhir_patient)
+
+
+# -----------------------------
+# Encounter Resource
+# -----------------------------
+
+st.markdown("### 🏥 Encounter Resource")
+
+st.json(fhir_encounter)
+
+
+# -----------------------------
+# Observation Resources
+# -----------------------------
+
+st.markdown("### 📊 Observation Resources")
+
+for observation in fhir_observations:
+
+    with st.expander(
+        observation["id"]
+    ):
+        st.json(observation)
+
+
+# -----------------------------
+# Bundle
+# -----------------------------
+
+st.markdown("### 📦 FHIR Bundle")
+
+st.write(
+    "A Bundle can contain multiple FHIR resources "
+    "for exchange as a single package."
+)
+
+st.json(fhir_bundle)
