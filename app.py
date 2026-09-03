@@ -22,7 +22,10 @@ from modules.fhir import (
     create_observation_resource,
     create_fhir_bundle
 )
-
+from modules.dicom import (
+    create_dicom_study,
+    create_imaging_workflow
+)
 st.set_page_config(
     page_title="INTEROP-LAB",
     page_icon="🏥",
@@ -101,6 +104,14 @@ fhir_patient = create_patient_resource(ehr_record)
 fhir_encounter = create_encounter_resource(ehr_record)
 fhir_observations = create_observation_resource(ehr_record)
 fhir_bundle = create_fhir_bundle(ehr_record)
+
+# -----------------------------
+# M7: DICOM + Imaging
+# -----------------------------
+
+dicom_study = create_dicom_study(ehr_record)
+
+imaging_workflow = create_imaging_workflow(dicom_study)
 
 # -----------------------------
 # Patient Summary
@@ -483,3 +494,56 @@ st.write(
 )
 
 st.json(fhir_bundle)
+
+st.markdown("---")
+
+st.header("🩻 M7: DICOM + Imaging Workflow")
+
+st.write(
+    "Imaging data follows a specialized workflow involving "
+    "the EHR/HIS, RIS, imaging modality, PACS and radiologist."
+)
+
+
+# -----------------------------
+# DICOM Study
+# -----------------------------
+
+st.markdown("### DICOM Study")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.write("**Patient ID**")
+    st.code(dicom_study["patient_id"])
+
+with col2:
+    st.write("**Study ID**")
+    st.code(dicom_study["study_id"])
+
+with col3:
+    st.write("**Modality**")
+    st.write(dicom_study["modality"])
+
+
+st.json(dicom_study)
+
+
+# -----------------------------
+# Imaging Workflow
+# -----------------------------
+
+st.markdown("### Imaging Workflow")
+
+for step_number, step in enumerate(
+    imaging_workflow,
+    start=1
+):
+
+    st.markdown(
+        f"**{step_number}. {step['system']}**"
+    )
+
+    st.write(
+        f"{step['action']} → `{step['status']}`"
+    )
