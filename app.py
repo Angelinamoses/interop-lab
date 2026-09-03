@@ -38,6 +38,20 @@ from modules.analytics import (
     calculate_data_quality,
     generate_analytic_features
 )
+from modules.cdss import (
+    generate_cdss_alerts,
+    generate_clinical_summary
+)
+from modules.security import (
+    authenticate_user,
+    check_authorization,
+    check_consent,
+    create_audit_event
+)
+from modules.abdm import (
+    create_abdm_discharge_summary,
+    validate_abdm_record
+)
 st.set_page_config(
     page_title="INTEROP-LAB",
     page_icon="🏥",
@@ -158,6 +172,57 @@ data_quality = calculate_data_quality(
 
 analytic_features = generate_analytic_features(
     integrated_data
+)
+
+# -----------------------------
+# M10: Clinical Decision Support
+# -----------------------------
+
+cdss_alerts = generate_cdss_alerts(
+    integrated_data,
+    analytic_features
+)
+
+clinical_summary = generate_clinical_summary(
+    integrated_data,
+    cdss_alerts
+)
+
+# -----------------------------
+# M11: Security, Privacy & Governance
+# -----------------------------
+
+authentication = authenticate_user(
+    "doctor",
+    "doctor123"
+)
+
+authorization = check_authorization(
+    "doctor",
+    "clinical_data"
+)
+
+consent = check_consent(
+    True
+)
+
+audit_event = create_audit_event(
+    "doctor",
+    "Access patient clinical data",
+    "clinical_data",
+    "Allowed"
+)
+
+# -----------------------------
+# M12: India / ABDM
+# -----------------------------
+
+abdm_record = create_abdm_discharge_summary(
+    ehr_record
+)
+
+abdm_validation = validate_abdm_record(
+    abdm_record
 )
 
 # -----------------------------
@@ -704,3 +769,99 @@ st.subheader("Derived Analytic Features")
 
 for feature, value in analytic_features.items():
     st.write(f"**{feature}:** {value}")
+
+st.header("M10: Clinical Decision Support System")
+
+st.subheader("Decision-Support Signals")
+
+if cdss_alerts:
+    for alert in cdss_alerts:
+        st.info(
+            f"**{alert['type']}** | "
+            f"{alert['priority']} | "
+            f"{alert['message']}"
+        )
+else:
+    st.success("No demonstration signals detected.")
+
+st.subheader("Clinical Summary")
+
+st.write(
+    f"**Patient ID:** "
+    f"{clinical_summary['patient_id']}"
+)
+
+st.write(
+    f"**Signals detected:** "
+    f"{clinical_summary['signals_detected']}"
+)
+
+st.write(
+    f"**Suggested workflow:** "
+    f"{clinical_summary['recommended_action']}"
+)
+
+st.caption(
+    "Educational simulation only. "
+    "These signals are not clinical diagnoses or treatment recommendations."
+)
+
+st.header("M11: Security, Privacy & Governance")
+
+st.subheader("Authentication")
+
+if authentication["authenticated"]:
+    st.success(
+        f"Authenticated user: {authentication['username']}"
+    )
+else:
+    st.error("Authentication failed.")
+
+st.subheader("Authorization")
+
+if authorization["authorized"]:
+    st.success(
+        f"Access authorized for: "
+        f"{authorization['resource']}"
+    )
+else:
+    st.error(
+        f"Access denied for: "
+        f"{authorization['resource']}"
+    )
+
+st.subheader("Patient Consent")
+
+if consent["status"] == "Approved":
+    st.success(consent["message"])
+else:
+    st.error(consent["message"])
+
+st.subheader("Audit Log")
+
+st.json(audit_event)
+
+st.caption(
+    "Educational simulation only. "
+    "This module demonstrates security and governance concepts "
+    "and is not a production security implementation."
+)
+st.header("M12: India / ABDM")
+
+st.subheader("ABDM-Aligned FHIR Record")
+
+st.json(abdm_record)
+
+st.subheader("Record Validation")
+
+for field, status in abdm_validation.items():
+    if status == "Present":
+        st.success(f"{field}: {status}")
+    else:
+        st.error(f"{field}: {status}")
+
+st.caption(
+    "Educational simulation only. "
+    "This is not connected to the ABDM network "
+    "and does not exchange real health information."
+)
