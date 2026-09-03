@@ -26,6 +26,13 @@ from modules.dicom import (
     create_dicom_study,
     create_imaging_workflow
 )
+from modules.hie import (
+    create_xds_document,
+    register_document,
+    store_document,
+    query_document,
+    retrieve_document
+)
 st.set_page_config(
     page_title="INTEROP-LAB",
     page_icon="🏥",
@@ -112,6 +119,26 @@ fhir_bundle = create_fhir_bundle(ehr_record)
 dicom_study = create_dicom_study(ehr_record)
 
 imaging_workflow = create_imaging_workflow(dicom_study)
+
+# -----------------------------
+# M8: HIE / IHE XDS
+# -----------------------------
+
+xds_document = create_xds_document(ehr_record)
+
+xds_registry = register_document(xds_document)
+
+xds_repository = store_document(xds_document)
+
+xds_query = query_document(
+    patient["patient"]["patient_id"],
+    xds_registry
+)
+
+xds_retrieval = retrieve_document(
+    xds_query["document_id"],
+    xds_repository
+)
 
 # -----------------------------
 # Patient Summary
@@ -547,3 +574,85 @@ for step_number, step in enumerate(
     st.write(
         f"{step['action']} → `{step['status']}`"
     )
+
+st.markdown("---")
+
+st.header("🌐 M8: Health Information Exchange")
+
+st.write(
+    "This module simulates how a clinical document can be "
+    "registered, stored, discovered and retrieved across "
+    "healthcare organizations."
+)
+
+
+# -----------------------------
+# XDS Architecture
+# -----------------------------
+
+st.markdown("### IHE XDS Document Sharing")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("### 📄 Document Source")
+    st.write("INTEROP-LAB Hospital")
+    st.success("Document submitted")
+
+with col2:
+    st.markdown("### 🗃️ Repository")
+    st.write(xds_repository["repository"])
+    st.success(xds_repository["storage_status"])
+
+with col3:
+    st.markdown("### 📋 Registry")
+    st.write("XDS Registry")
+    st.success(xds_registry["registry_status"])
+
+
+# -----------------------------
+# Document
+# -----------------------------
+
+st.markdown("### Clinical Document")
+
+st.json(xds_document)
+
+
+# -----------------------------
+# Query
+# -----------------------------
+
+st.markdown("### 🔎 Document Query")
+
+st.write(
+    f"Searching for documents belonging to "
+    f"patient `{patient['patient']['patient_id']}`"
+)
+
+if xds_query["status"] == "Match found":
+
+    st.success(
+        f"Document found: {xds_query['document_id']}"
+    )
+
+else:
+
+    st.error("No matching document found.")
+
+
+# -----------------------------
+# Retrieval
+# -----------------------------
+
+st.markdown("### 📥 Document Retrieval")
+
+if xds_retrieval["status"] == "Retrieved":
+
+    st.success(
+        f"Document `{xds_retrieval['document_id']}` retrieved successfully."
+    )
+
+else:
+
+    st.error("Document retrieval failed.")
