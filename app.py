@@ -33,6 +33,11 @@ from modules.hie import (
     query_document,
     retrieve_document
 )
+from modules.analytics import (
+    build_integrated_dataset,
+    calculate_data_quality,
+    generate_analytic_features
+)
 st.set_page_config(
     page_title="INTEROP-LAB",
     page_icon="🏥",
@@ -138,6 +143,21 @@ xds_query = query_document(
 xds_retrieval = retrieve_document(
     xds_query["document_id"],
     xds_repository
+)
+
+# M9: Data Integration + Analytics
+
+integrated_data = build_integrated_dataset(
+    ehr_record,
+    terminology
+)
+
+data_quality = calculate_data_quality(
+    integrated_data
+)
+
+analytic_features = generate_analytic_features(
+    integrated_data
 )
 
 # -----------------------------
@@ -656,3 +676,31 @@ if xds_retrieval["status"] == "Retrieved":
 else:
 
     st.error("Document retrieval failed.")
+
+st.header("M9: Data Integration + Analytics")
+
+st.subheader("Integrated Patient Dataset")
+
+st.json(integrated_data)
+
+st.subheader("Data Quality")
+
+st.write(
+    f"Completeness: "
+    f"{data_quality['completeness_percent']}%"
+)
+
+st.write(
+    f"Missing fields: "
+    f"{data_quality['missing_count']}"
+)
+
+if data_quality["missing_fields"]:
+    st.write(data_quality["missing_fields"])
+else:
+    st.success("No missing fields detected.")
+
+st.subheader("Derived Analytic Features")
+
+for feature, value in analytic_features.items():
+    st.write(f"**{feature}:** {value}")
