@@ -52,6 +52,10 @@ from modules.abdm import (
     create_abdm_discharge_summary,
     validate_abdm_record
 )
+from modules.workflow import (
+    create_workflow_steps,
+    simulate_failure
+)
 st.set_page_config(
     page_title="INTEROP-LAB",
     page_icon="🏥",
@@ -224,6 +228,12 @@ abdm_record = create_abdm_discharge_summary(
 abdm_validation = validate_abdm_record(
     abdm_record
 )
+
+# -----------------------------
+# M13: Integrated Workflow
+# -----------------------------
+
+workflow_steps = create_workflow_steps()
 
 # -----------------------------
 # Patient Summary
@@ -865,3 +875,51 @@ st.caption(
     "This is not connected to the ABDM network "
     "and does not exchange real health information."
 )
+
+st.header("M13: Integrated Healthcare Workflow")
+
+st.subheader("End-to-End Data-to-Action Pipeline")
+
+for step in workflow_steps:
+    if step["status"] == "Completed":
+        st.success(
+            f"Step {step['step']}: "
+            f"{step['system']} → {step['action']}"
+        )
+    else:
+        st.warning(
+            f"Step {step['step']}: "
+            f"{step['system']} → {step['action']}"
+        )
+
+st.subheader("Interoperability Failure Simulator")
+
+failure_type = st.selectbox(
+    "Select a failure scenario",
+    [
+        "Terminology Mapping Failure",
+        "Patient Identity Failure",
+        "FHIR Validation Failure",
+        "Consent Failure"
+    ]
+)
+
+if st.button("Simulate Failure"):
+
+    failure = simulate_failure(
+        failure_type
+    )
+
+    st.error(
+        f"Failure: {failure['result']}"
+    )
+
+    st.write(
+        f"**Affected component:** "
+        f"{failure['component']}"
+    )
+
+    st.write(
+        f"**Effect:** "
+        f"{failure['effect']}"
+    )
