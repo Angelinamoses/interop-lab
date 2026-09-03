@@ -11,6 +11,11 @@ from modules.terminology import (
     generate_terminology_summary,
     map_disease_classification
 )
+from modules.hl7 import (
+    generate_hl7_message,
+    parse_hl7_message,
+    get_hl7_segments
+)
 
 
 st.set_page_config(
@@ -74,6 +79,14 @@ terminology = generate_terminology_summary(ehr_record)
 disease_classification = map_disease_classification(
     "myocardial infarction"
 )
+
+# -----------------------------
+# M5: HL7 v2
+# -----------------------------
+
+hl7_message = generate_hl7_message(ehr_record)
+hl7_segments = get_hl7_segments(hl7_message)
+parsed_hl7 = parse_hl7_message(hl7_message)
 
 # -----------------------------
 # Patient Summary
@@ -327,3 +340,54 @@ with col2:
 with col3:
     st.write("**Code**")
     st.code(disease_classification["code"])
+
+st.markdown("---")
+
+st.header("📡 M5: HL7 v2 Message Exchange")
+
+st.write(
+    "The EHR converts selected patient and encounter information "
+    "into a structured HL7 v2-style message for system-to-system exchange."
+)
+
+
+# -----------------------------
+# Message
+# -----------------------------
+
+st.markdown("### HL7 v2 Message")
+
+st.code(
+    hl7_message,
+    language="text"
+)
+
+
+# -----------------------------
+# Segments
+# -----------------------------
+
+st.markdown("### Message Segments")
+
+segment_cols = st.columns(len(hl7_segments))
+
+for col, segment in zip(segment_cols, hl7_segments):
+
+    with col:
+        st.metric(
+            "Segment",
+            segment
+        )
+
+
+# -----------------------------
+# Explanation
+# -----------------------------
+
+st.markdown("### What do these segments represent?")
+
+st.markdown("""
+- **MSH** → Message Header
+- **PID** → Patient Identification
+- **PV1** → Patient Visit / Encounter information
+""")
